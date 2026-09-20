@@ -10,6 +10,12 @@
 ### Added
 - 工具栏独立按钮：全部暂停 / 全部恢复 / 清空失败（按任务状态自动禁用）
 
+### Security
+- Electron `35.7.5` → `44.4.3`（消除沙箱 / context isolation / 自定义协议等一批高危公告）
+- electron-builder `26.15.3`；`app-builder-lib` / `builder-util-runtime` / `tar` 锁定到已修复版本
+- `package.json` 增加 `overrides`，强制传递依赖安全下限
+- Electron 44 API 适配：`setLoginItemSettings` 去掉已移除的 `openAsHidden`；剪贴板接管兼容 `readText` 异步返回
+
 ## [1.0.0] - 2026-09-20
 
 ### Added
