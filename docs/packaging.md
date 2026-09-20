@@ -82,7 +82,7 @@ Get-FileHash "release\LocalDM Setup 1.0.0.exe" -Algorithm SHA256
 
 ## CI 说明
 
-仓库 GitHub Actions（`docs/ci.yml.example（复制到 .github/workflows/ci.yml 启用）`）会在 push / PR 时：
+仓库 GitHub Actions（`.github/workflows/ci.yml`）会在 push / PR 时：
 
 1. 安装 Node 依赖
 2. `npm run typecheck`

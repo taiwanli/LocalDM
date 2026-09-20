@@ -1,5 +1,6 @@
 # LocalDM
 
+[![CI](https://github.com/taiwanli/LocalDM/actions/workflows/ci.yml/badge.svg)](https://github.com/taiwanli/LocalDM/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **LocalDM** 是一款面向 Windows 的开源多线程下载管理器。  
@@ -159,7 +160,8 @@ React renderer (IPC)
 
 ## 持续集成
 
-仓库附带 GitHub Actions 工作流模板（docs/ci.yml.example（复制到 .github/workflows/ci.yml 启用））。若推送时因 Token 缺少 workflow 权限被拒绝，可先在 GitHub 网页端添加该文件，或使用具备 workflow 权限的 PAT 再推送。
+GitHub Actions 在 push / PR 时于 Windows 运行 `npm ci` → `typecheck` → `smoke`。状态见 README 顶部 CI badge。
+
 
 ## 贡献
 
