@@ -31,3 +31,7 @@ scripts/patch-*.cjs
 scripts/debug-queue.js
 scripts/dev.ps1
 test-report/
+
+.github/workflows/
+docs/ci.yml
+
