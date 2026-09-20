@@ -1,0 +1,199 @@
+/**
+ * LocalDM design tokens — iOS Liquid Glass, light/dark parity + accent presets.
+ * Source of truth: docs/UI_DESIGN_REPORT.md
+ */
+
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #f2f2f7;
+  --bg-elevated: #ffffff;
+  --fill: rgba(120, 120, 128, 0.12);
+  --separator: rgba(60, 60, 67, 0.18);
+  --label: #1c1c1e;
+  --label-secondary: rgba(60, 60, 67, 0.6);
+  --label-tertiary: rgba(60, 60, 67, 0.3);
+
+  --tint: #007aff;
+  --tint-strong: #0062cc;
+  --tint-soft: rgba(0, 122, 255, 0.12);
+  --tint-on: #ffffff;
+
+  --glass-thick: rgba(255, 255, 255, 0.72);
+  --glass-thin: rgba(255, 255, 255, 0.5);
+  --glass-clear: rgba(255, 255, 255, 0.32);
+  --glass-stroke: rgba(255, 255, 255, 0.65);
+  --glass-inner-highlight: rgba(255, 255, 255, 0.85);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+
+  --success: #34c759;
+  --warning: #ff9f0a;
+  --error: #ff3b30;
+  --info: #5ac8fa;
+
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-continuous: 28px;
+  --radius-full: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --font-ui: Inter, 'Segoe UI Variable Text', 'Segoe UI', 'PingFang SC',
+    'Microsoft YaHei UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Mono', 'SF Mono', ui-monospace,
+    monospace;
+
+  --text-11: 11px;
+  --text-12: 12px;
+  --text-13: 13px;
+  --text-15: 15px;
+  --text-17: 17px;
+  --text-20: 20px;
+  --text-22: 22px;
+  --text-28: 28px;
+
+  --glass-blur-thick: 32px;
+  --glass-blur-thin: 24px;
+  --glass-saturate: 180%;
+
+  --sidebar-width: 228px;
+  --row-height: 52px;
+  --titlebar-height: 40px;
+  --toolbar-height: 48px;
+  --statusbar-height: 36px;
+
+  --focus-ring: 0 0 0 3px var(--tint-soft);
+  --progress-height: 6px;
+  --thread-bar-height: 6px;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #000000;
+  --bg-elevated: #1c1c1e;
+  --fill: rgba(120, 120, 128, 0.24);
+  --separator: rgba(84, 84, 88, 0.65);
+  --label: #ffffff;
+  --label-secondary: rgba(235, 235, 245, 0.6);
+  --label-tertiary: rgba(235, 235, 245, 0.3);
+
+  --tint: #0a84ff;
+  --tint-strong: #409cff;
+  --tint-soft: rgba(10, 132, 255, 0.2);
+  --tint-on: #ffffff;
+
+  --glass-thick: rgba(28, 28, 30, 0.72);
+  --glass-thin: rgba(28, 28, 30, 0.48);
+  --glass-clear: rgba(28, 28, 30, 0.28);
+  --glass-stroke: rgba(255, 255, 255, 0.14);
+  --glass-inner-highlight: rgba(255, 255, 255, 0.16);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+
+  --success: #30d158;
+  --warning: #ff9f0a;
+  --error: #ff453a;
+  --info: #64d2ff;
+}
+
+/* —— Accent presets (pixel-level theme) —— */
+[data-theme='light'][data-accent='blue'],
+[data-theme='light']:not([data-accent]) {
+  --tint: #007aff;
+  --tint-strong: #0062cc;
+  --tint-soft: rgba(0, 122, 255, 0.12);
+}
+[data-theme='dark'][data-accent='blue'],
+[data-theme='dark']:not([data-accent]) {
+  --tint: #0a84ff;
+  --tint-strong: #409cff;
+  --tint-soft: rgba(10, 132, 255, 0.2);
+}
+
+[data-theme='light'][data-accent='purple'] {
+  --tint: #af52de;
+  --tint-strong: #8944ab;
+  --tint-soft: rgba(175, 82, 222, 0.12);
+}
+[data-theme='dark'][data-accent='purple'] {
+  --tint: #bf5af2;
+  --tint-strong: #da8cff;
+  --tint-soft: rgba(191, 90, 242, 0.2);
+}
+
+[data-theme='light'][data-accent='pink'] {
+  --tint: #ff2d55;
+  --tint-strong: #d70032;
+  --tint-soft: rgba(255, 45, 85, 0.12);
+}
+[data-theme='dark'][data-accent='pink'] {
+  --tint: #ff375f;
+  --tint-strong: #ff6482;
+  --tint-soft: rgba(255, 55, 95, 0.2);
+}
+
+[data-theme='light'][data-accent='orange'] {
+  --tint: #ff9500;
+  --tint-strong: #c93400;
+  --tint-soft: rgba(255, 149, 0, 0.14);
+}
+[data-theme='dark'][data-accent='orange'] {
+  --tint: #ff9f0a;
+  --tint-strong: #ffb340;
+  --tint-soft: rgba(255, 159, 10, 0.2);
+}
+
+[data-theme='light'][data-accent='green'] {
+  --tint: #34c759;
+  --tint-strong: #248a3d;
+  --tint-soft: rgba(52, 199, 89, 0.14);
+}
+[data-theme='dark'][data-accent='green'] {
+  --tint: #30d158;
+  --tint-strong: #6ee68a;
+  --tint-soft: rgba(48, 209, 88, 0.2);
+}
+
+[data-theme='light'][data-accent='teal'] {
+  --tint: #32ade6;
+  --tint-strong: #0071a4;
+  --tint-soft: rgba(50, 173, 230, 0.14);
+}
+[data-theme='dark'][data-accent='teal'] {
+  --tint: #64d2ff;
+  --tint-strong: #9ae6ff;
+  --tint-soft: rgba(100, 210, 255, 0.2);
+}
+
+[data-theme='light'][data-accent='indigo'] {
+  --tint: #5856d6;
+  --tint-strong: #3634a3;
+  --tint-soft: rgba(88, 86, 214, 0.14);
+}
+[data-theme='dark'][data-accent='indigo'] {
+  --tint: #5e5ce6;
+  --tint-strong: #9896f0;
+  --tint-soft: rgba(94, 92, 230, 0.22);
+}
+
+[data-theme='light'][data-accent='graphite'] {
+  --tint: #636366;
+  --tint-strong: #3a3a3c;
+  --tint-soft: rgba(99, 99, 102, 0.12);
+}
+[data-theme='dark'][data-accent='graphite'] {
+  --tint: #98989d;
+  --tint-strong: #aeaeb2;
+  --tint-soft: rgba(152, 152, 157, 0.18);
+}

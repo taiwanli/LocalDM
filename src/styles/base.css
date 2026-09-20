@@ -1,0 +1,244 @@
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--text-15);
+  line-height: 1.4;
+  color: var(--label);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+/* —— Liquid Glass utilities —— */
+.glass-thick,
+.glass-thin,
+.glass-clear {
+  border: 1px solid var(--glass-stroke);
+  box-shadow: var(--glass-shadow);
+  position: relative;
+}
+
+.glass-thick {
+  background: var(--glass-thick);
+  backdrop-filter: blur(var(--glass-blur-thick)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur-thick))
+    saturate(var(--glass-saturate));
+}
+
+.glass-thin {
+  background: var(--glass-thin);
+  backdrop-filter: blur(var(--glass-blur-thin)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur-thin))
+    saturate(var(--glass-saturate));
+}
+
+.glass-clear {
+  background: var(--glass-clear);
+}
+
+.glass-thick::before,
+.glass-thin::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border-top: 1px solid var(--glass-inner-highlight);
+  opacity: 0.9;
+}
+
+/* —— Controls (iOS liquid glass pixel pass) —— */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 18px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tint) 92%, #fff) 0%, var(--tint) 55%, var(--tint-strong) 100%);
+  color: var(--tint-on);
+  font-size: var(--text-13);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 1px 2px rgba(0, 0, 0, 0.12);
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.04);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: var(--radius-full);
+  background: var(--fill);
+  color: var(--label);
+  font-size: var(--text-13);
+  font-weight: 500;
+  border: 1px solid color-mix(in srgb, var(--separator) 80%, transparent);
+  transition: background 0.12s ease, transform 0.12s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--fill) 70%, var(--bg-elevated));
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  min-width: 40px;
+  padding: 0 10px;
+  border-radius: var(--radius-md);
+  color: var(--label);
+  transition: background 0.12s ease;
+}
+
+.btn-ghost:hover {
+  background: var(--fill);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-12);
+  font-weight: 500;
+  background: var(--fill);
+  color: var(--label-secondary);
+  border: 1px solid transparent;
+}
+
+.status-pill[data-status='downloading'] {
+  background: var(--tint-soft);
+  color: var(--tint);
+  border-color: color-mix(in srgb, var(--tint) 22%, transparent);
+}
+
+.status-pill[data-status='completed'] {
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 24%, transparent);
+}
+
+.status-pill[data-status='paused'] {
+  background: color-mix(in srgb, var(--warning) 18%, transparent);
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 24%, transparent);
+}
+
+.status-pill[data-status='failed'] {
+  background: color-mix(in srgb, var(--error) 16%, transparent);
+  color: var(--error);
+  border-color: color-mix(in srgb, var(--error) 22%, transparent);
+}
+
+.progress-track {
+  height: var(--progress-height, 6px);
+  border-radius: var(--radius-full);
+  background: var(--separator);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--label) 4%, transparent);
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--tint) 80%, #fff) 0%,
+    var(--tint) 100%
+  );
+  transition: width 0.2s ease;
+}
+
+.progress-fill[data-done='true'] {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--success) 75%, #fff) 0%,
+    var(--success) 100%
+  );
+}
+
+/* Focus — soft iOS-like ring */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--tint);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

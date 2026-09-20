@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>LocalDM 嗅探</title>
+    <style>
+      body {
+        width: 340px;
+        margin: 0;
+        padding: 14px;
+        font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+        background: rgba(242, 242, 247, 0.94);
+        color: #1c1c1e;
+      }
+      h1 {
+        font-size: 14px;
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
+      .row {
+        font-size: 12px;
+        color: rgba(60, 60, 67, 0.6);
+        margin-bottom: 8px;
+      }
+      .status.ok { color: #34c759; }
+      .status.bad { color: #ff3b30; }
+      label {
+        display: block;
+        font-size: 12px;
+        margin: 8px 0 4px;
+        color: rgba(60, 60, 67, 0.7);
+      }
+      input[type='number'],
+      input[type='text'] {
+        width: 100%;
+        height: 30px;
+        margin-bottom: 6px;
+        border-radius: 8px;
+        border: 1px solid rgba(60, 60, 67, 0.18);
+        padding: 0 8px;
+        box-sizing: border-box;
+      }
+      .check {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+      button {
+        width: 100%;
+        height: 32px;
+        border: none;
+        border-radius: 999px;
+        background: #007aff;
+        color: #fff;
+        font-weight: 500;
+        cursor: pointer;
+        margin-top: 4px;
+      }
+      button.secondary {
+        background: rgba(120, 120, 128, 0.16);
+        color: #1c1c1e;
+      }
+      .list {
+        margin-top: 10px;
+        max-height: 180px;
+        overflow: auto;
+        border-top: 1px solid rgba(60, 60, 67, 0.12);
+        padding-top: 8px;
+      }
+      .item {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 6px;
+        align-items: center;
+        font-size: 12px;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(60, 60, 67, 0.08);
+      }
+      .item .url {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .item button {
+        width: auto;
+        height: 26px;
+        padding: 0 10px;
+        margin: 0;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>LocalDM 嗅探</h1>
+    <div class="row status" id="status">检测桌面端…</div>
+    <label for="port">API 端口</label>
+    <input id="port" type="number" value="37280" />
+    <label for="token">API Token（可选）</label>
+    <input id="token" type="text" placeholder="关于页/UserData/api-token" />
+    <label for="minSize">最小媒体 (KB)</label>
+    <input id="minSize" type="number" value="200" />
+    <label class="check"><input id="sniffEnabled" type="checkbox" checked /> 启用网络嗅探</label>
+    <label class="check"><input id="takeoverEnabled" type="checkbox" /> 接管浏览器下载（扩展本地）</label>
+    <label class="check"><input id="systemTakeover" type="checkbox" /> 系统下载托管（与桌面设置同步开关）</label>
+    <button id="save" type="button">保存设置</button>
+    <button id="refresh" class="secondary" type="button">刷新本页资源</button>
+    <button id="sendPage" class="secondary" type="button">按当前页面送入 LocalDM</button>
+    <div class="list" id="list"></div>
+    <script src="popup.js"></script>
+  </body>
+</html>

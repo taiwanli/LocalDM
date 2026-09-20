@@ -1,0 +1,33 @@
+﻿node_modules/
+dist/
+dist-electron/
+UserData/
+dist-smoke/
+release/
+*.log
+.DS_Store
+resources/bin/*
+!resources/bin/.gitkeep
+.env
+.env.local
+*.pem
+
+# local helper / patch scripts
+scripts/.tmp-*
+scripts/**/*.exe
+scripts/**/*.bin
+scripts/**/*.ts.p*
+scripts/**/tasks-state.json
+**/.tmp-*/
+*.part
+
+# internal / non-public notes
+docs/internal/
+**/*REVERSE*
+**/*TDM*
+research/
+
+scripts/patch-*.cjs
+scripts/debug-queue.js
+scripts/dev.ps1
+test-report/

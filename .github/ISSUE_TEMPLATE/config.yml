@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 安全漏洞报告
+    url: https://github.com/taiwanli/LocalDM/security/advisories/new
+    about: 请勿公开报告安全问题，使用私密漏洞报告渠道
+  - name: 使用文档
+    url: https://github.com/taiwanli/LocalDM/blob/main/docs/getting-started.md
+    about: 安装、扩展加载与常见问题

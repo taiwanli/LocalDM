@@ -1,0 +1,117 @@
+{
+  "name": "localdm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LocalDM — open-source multi-thread download manager for Windows",
+  "main": "dist-electron/electron/main.js",
+  "author": "LocalDM contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/taiwanli/LocalDM.git"
+  },
+  "homepage": "https://github.com/taiwanli/LocalDM#readme",
+  "bugs": {
+    "url": "https://github.com/taiwanli/LocalDM/issues"
+  },
+  "license": "MIT",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev:ui": "vite",
+    "build:ui": "vite build",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "build": "npm run build:ui && npm run build:electron",
+    "dev:electron": "npm run build:electron && electron .",
+    "dev": "concurrently -k \"vite\" \"npm run watch:electron\"",
+    "watch:electron": "tsc -p tsconfig.electron.json --watch --preserveWatchOutput",
+    "start": "npm run build && electron .",
+    "smoke": "node scripts/smoke.mjs",
+    "smoke:typecheck": "node scripts/smoke-typecheck.mjs",
+    "pack:win": "npm run build && electron-builder --win",
+    "dist:win": "npm run build && electron-builder --win nsis portable"
+  },
+  "build": {
+    "appId": "app.localdm.desktop",
+    "productName": "LocalDM",
+    "copyright": "LocalDM personal use",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/bin",
+        "to": "bin",
+        "filter": [
+          "yt-dlp.exe",
+          "ffmpeg.exe",
+          "aria2c.exe"
+        ]
+      },
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
+      },
+      {
+        "from": "build/icon.ico",
+        "to": "icon.ico"
+      },
+      {
+        "from": "extension",
+        "to": "extension",
+        "filter": [
+          "**/*",
+          "!**/README.md"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "LocalDM-${version}-portable.exe"
+    }
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.0",
+    "concurrently": "^9.1.0",
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.12",
+    "typescript": "^5.8.0",
+    "vite": "^6.3.0"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "electron@35.7.5": true
+  }
+}
