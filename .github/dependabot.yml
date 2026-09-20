@@ -11,7 +11,7 @@ updates:
     commit-message:
       prefix: "chore(deps)"
     ignore:
-      # Major Electron / Vite bumps need a dedicated upgrade branch
+      # Major toolchain bumps need a dedicated branch + full smoke
       - dependency-name: "electron"
         update-types: ["version-update:semver-major"]
       - dependency-name: "vite"
@@ -23,6 +23,10 @@ updates:
       - dependency-name: "react-dom"
         update-types: ["version-update:semver-major"]
       - dependency-name: "electron-builder"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
