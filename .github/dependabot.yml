@@ -10,6 +10,20 @@ updates:
       - dependencies
     commit-message:
       prefix: "chore(deps)"
+    ignore:
+      # Major Electron / Vite bumps need a dedicated upgrade branch
+      - dependency-name: "electron"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "electron-builder"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"
