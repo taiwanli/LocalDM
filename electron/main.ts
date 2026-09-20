@@ -138,9 +138,9 @@ async function applyProxySettings(proxyUrl: string): Promise<void> {
 
 function applyAutoLaunch(enabled: boolean): void {
   try {
+    // Electron 44+ types: openAsHidden is macOS-only / removed; Windows uses --hidden
     app.setLoginItemSettings({
       openAtLogin: !!enabled,
-      openAsHidden: true,
       args: ['--hidden'],
     });
     log('autoLaunch', enabled ? 'on' : 'off');
@@ -655,31 +655,32 @@ function registerIpc(runner: TaskRunner): void {
 function startClipboardTakeoverMonitor(): void {
   if (clipboardTimer) return;
   clipboardTimer = setInterval(() => {
-    const settings = loadSettings();
-    if (!settings.systemTakeoverEnabled || !settings.clipboardTakeoverEnabled) return;
-    let text = '';
-    try {
-      text = clipboard.readText() || '';
-    } catch {
-      return;
-    }
-    const classified = classifyClipboardDownloadText(text);
-    if (!classified) return;
-    if (classified.url === lastClipboardDownload) return;
-    lastClipboardDownload = classified.url;
-    if (!taskRunner) return;
-    void taskRunner
-      .addFromCapture({
-        kind: classified.kind,
-        url: classified.url,
-      })
-      .then((task) => {
+    void (async () => {
+      const settings = loadSettings();
+      if (!settings.systemTakeoverEnabled || !settings.clipboardTakeoverEnabled) return;
+      let text = '';
+      try {
+        const value = clipboard.readText() as string | Promise<string>;
+        text = (await Promise.resolve(value)) || '';
+      } catch {
+        return;
+      }
+      const classified = classifyClipboardDownloadText(text);
+      if (!classified) return;
+      if (classified.url === lastClipboardDownload) return;
+      lastClipboardDownload = classified.url;
+      if (!taskRunner) return;
+      try {
+        const task = await taskRunner.addFromCapture({
+          kind: classified.kind,
+          url: classified.url,
+        });
         broadcastTasks();
         log('clipboard takeover', task.id, classified.url.slice(0, 80));
-      })
-      .catch((error: unknown) => {
+      } catch (error: unknown) {
         logError('clipboard takeover failed', error);
-      });
+      }
+    })();
   }, 1200);
 }
 
