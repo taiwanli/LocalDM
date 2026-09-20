@@ -159,7 +159,7 @@ React renderer (IPC)
 
 ## 持续集成
 
-仓库附带 GitHub Actions 工作流模板（.github/workflows/ci.yml）。若推送时因 Token 缺少 workflow 权限被拒绝，可先在 GitHub 网页端添加该文件，或使用具备 workflow 权限的 PAT 再推送。
+仓库附带 GitHub Actions 工作流模板（docs/ci.yml.example（复制到 .github/workflows/ci.yml 启用））。若推送时因 Token 缺少 workflow 权限被拒绝，可先在 GitHub 网页端添加该文件，或使用具备 workflow 权限的 PAT 再推送。
 
 ## 贡献
 
