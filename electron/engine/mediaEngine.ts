@@ -55,6 +55,8 @@ export interface MediaDownloadOptions {
   proxy?: string;
   /** chrome/edge/firefox for --cookies-from-browser on cookie-sensitive hosts */
   cookieBrowser?: string;
+  /** Netscape cookies.txt for yt-dlp --cookies */
+  cookieFile?: string;
 }
 
 const PROGRESS_TEMPLATE =
@@ -177,11 +179,25 @@ function buildEnv(): NodeJS.ProcessEnv {
   return { ...process.env };
 }
 
+/** 星愿浏览器 (Twinkstar) Chromium User Data root. */
+export function resolveTwinkstarUserData(): string | undefined {
+  const candidates = [
+    path.join(process.env.LOCALAPPDATA || '', 'Twinkstar', 'User Data'),
+    path.join(process.env.LOCALAPPDATA || '', 'Twinkstar Browser', 'User Data'),
+    path.join(process.env.APPDATA || '', 'Twinkstar', 'User Data'),
+  ];
+  for (const dir of candidates) {
+    if (dir && fs.existsSync(path.join(dir, 'Local State'))) return dir;
+  }
+  return undefined;
+}
+
 export class MediaEngine {
   private active = new Map<string, ChildProcessWithoutNullStreams>();
   private killIntent = new Set<string>();
   private proxy?: string;
   private cookieBrowser?: string;
+  private cookieFile?: string;
 
   constructor(
     private ytdlpPath: string,
@@ -200,6 +216,10 @@ export class MediaEngine {
 
   setCookieBrowser(browser: string | undefined): void {
     this.cookieBrowser = (browser || '').trim() || undefined;
+  }
+
+  setCookieFile(file: string | undefined): void {
+    this.cookieFile = (file || '').trim() || undefined;
   }
 
   get paths() {
@@ -276,8 +296,19 @@ export class MediaEngine {
     return ['--proxy', value];
   }
 
-  private cookieArgsFor(url: string, override?: string): string[] {
-    return cookieBrowserArgs(override ?? this.cookieBrowser, url);
+  private cookieArgsFor(url: string, override?: string, cookieFile?: string): string[] {
+    let browser = (override ?? this.cookieBrowser ?? '').trim();
+    if (/^twinkstar$/i.test(browser)) {
+      const userData = resolveTwinkstarUserData();
+      // yt-dlp accepts chrome:<User Data path> for Chromium forks (星愿浏览器 / Twinkstar)
+      browser = userData ? `chrome:${userData}` : '';
+    }
+    const args = cookieBrowserArgs(browser, url);
+    const file = ((cookieFile ?? this.cookieFile) || '').trim();
+    if (file && fs.existsSync(file)) {
+      args.push('--cookies', file);
+    }
+    return args;
   }
 
   private async execCapture(args: string[]): Promise<string> {
@@ -356,7 +387,7 @@ export class MediaEngine {
       args.push('--ffmpeg-location', path.dirname(this.ffmpegPath));
     }
     args.push(...this.headerArgs(options.headers));
-    args.push(...this.cookieArgsFor(normalizedUrl, options.cookieBrowser));
+    args.push(...this.cookieArgsFor(normalizedUrl, options.cookieBrowser, options.cookieFile));
     if (isStreamUrl(normalizedUrl)) {
       args.push('--downloader', 'native');
     }

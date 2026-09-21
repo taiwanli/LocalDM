@@ -235,6 +235,7 @@ export default function App() {
         taskCount={visible.length}
         totalSpeed={speed}
         extensionStatus={extensionStatus}
+        downloadMode={bootstrap?.settings.downloadMode || 'adaptive'}
         onOpenAbout={() => setAboutOpen(true)}
         downloadDir={
           bootstrap

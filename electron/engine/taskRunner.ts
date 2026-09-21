@@ -28,6 +28,8 @@ import { HlsEngine, isHlsUrl } from './hlsEngine';
 import { loadTasksState, normalizeTasksForRestore, saveTasksState } from './taskPersistence';
 import { logError, logTask } from '../logger';
 import { isYtDlpUrl, normalizeDownloadUrl } from '../../shared/media';
+import { downloadModePreset, resolveDownloadMode } from '../../shared/downloadMode';
+import type { DownloadMode } from '../../shared/types';
 
 export interface TaskRunnerDeps {
   userDataDir: string;
@@ -49,10 +51,14 @@ export interface TaskRunnerDeps {
   hfConnectionCap?: number;
   aria2cPath?: string;
   enableBt?: boolean;
+  btTrackers?: string;
+  btMetadataTimeoutSec?: number;
   adaptiveDegrade?: boolean;
   cookieBrowser?: string;
+  cookieFile?: string;
   askVideoQuality?: boolean;
   useNativeHls?: boolean;
+  downloadMode?: DownloadMode;
   onTaskStatusSettled?: (task: DownloadTask, previousStatus: TaskStatus | undefined) => void;
 }
 
@@ -116,7 +122,21 @@ export class TaskRunner extends EventEmitter {
     );
     this.mediaEngine.setProxy(deps.httpProxy);
     this.mediaEngine.setCookieBrowser(deps.cookieBrowser);
+    this.mediaEngine.setCookieFile(deps.cookieFile);
     this.torrentEngine = new TorrentEngine(defaultAria2cPath(appRoot, deps.aria2cPath));
+    this.torrentEngine.configure({
+      aria2cPath: defaultAria2cPath(appRoot, deps.aria2cPath),
+      userDataDir: deps.userDataDir,
+      proxy: deps.httpProxy,
+      extraTrackers: String(deps.btTrackers || '')
+        .split(/[\r\n,;]+/)
+        .map((s) => s.trim())
+        .filter(Boolean),
+      metadataTimeoutMs:
+        deps.btMetadataTimeoutSec && deps.btMetadataTimeoutSec > 0
+          ? deps.btMetadataTimeoutSec * 1000
+          : undefined,
+    });
     this.deps = {
       ...this.deps,
       adaptiveDegrade: deps.adaptiveDegrade !== false,
@@ -187,8 +207,34 @@ export class TaskRunner extends EventEmitter {
     if (partial.cookieBrowser !== undefined) {
       this.mediaEngine.setCookieBrowser(this.deps.cookieBrowser);
     }
+    if (partial.cookieFile !== undefined) {
+      this.mediaEngine.setCookieFile(this.deps.cookieFile);
+    }
+    if (partial.downloadMode !== undefined) {
+      this.setDownloadMode(resolveDownloadMode(partial.downloadMode));
+    }
     if (partial.aria2cPath !== undefined || partial.appRoot !== undefined) {
       this.torrentEngine.updatePath(defaultAria2cPath(appRoot, this.deps.aria2cPath));
+      this.torrentEngine.configure({ aria2cPath: this.torrentEngine.path });
+    }
+    if (
+      partial.btTrackers !== undefined ||
+      partial.btMetadataTimeoutSec !== undefined ||
+      partial.httpProxy !== undefined ||
+      partial.userDataDir !== undefined
+    ) {
+      this.torrentEngine.configure({
+        userDataDir: this.deps.userDataDir,
+        proxy: this.deps.httpProxy,
+        extraTrackers: String(this.deps.btTrackers || '')
+          .split(/[\r\n,;]+/)
+          .map((s) => s.trim())
+          .filter(Boolean),
+        metadataTimeoutMs:
+          this.deps.btMetadataTimeoutSec && this.deps.btMetadataTimeoutSec > 0
+            ? this.deps.btMetadataTimeoutSec * 1000
+            : undefined,
+      });
     }
   }
 
@@ -241,15 +287,26 @@ export class TaskRunner extends EventEmitter {
   }
 
   private engineOptions(task?: DownloadTask) {
-    // Single policy: default Range concurrency + adaptive degrade (no download modes).
+    const mode = resolveDownloadMode(this.deps.downloadMode);
+    const preset = downloadModePreset(mode);
+    const useSettingsConn = preset.useSettingsConnections === true;
+    // Mode preset drives connection/concurrency; task-level effectiveConnections still wins.
+    const fallbackConn = useSettingsConn
+      ? this.deps.maxConnections || preset.maxConnections
+      : preset.maxConnections || this.deps.maxConnections;
+    const fallbackPer = useSettingsConn
+      ? this.deps.maxConnectionsPerServer || preset.maxConnectionsPerServer
+      : preset.maxConnectionsPerServer || this.deps.maxConnectionsPerServer;
     const baseConn =
       task?.effectiveConnections && task.effectiveConnections > 0
         ? task.effectiveConnections
-        : this.deps.maxConnections;
+        : fallbackConn;
     const basePer =
       task?.effectiveConnections && task.effectiveConnections > 0
         ? task.effectiveConnections
-        : this.deps.maxConnectionsPerServer;
+        : fallbackPer;
+    const adaptive =
+      preset.adaptiveDegrade === true || this.deps.adaptiveDegrade !== false;
     return {
       maxConnections: baseConn,
       minSegmentBytes: this.deps.minSegmentBytes,
@@ -258,12 +315,33 @@ export class TaskRunner extends EventEmitter {
       taskSpeedLimitBps: task?.speedLimitBps,
       maxConnectionsPerServer: basePer && basePer > 0 ? basePer : baseConn,
       hfConnectionCap: this.deps.hfConnectionCap ?? 4,
-      adaptiveDegrade: this.deps.adaptiveDegrade !== false,
+      adaptiveDegrade: adaptive,
+      workerStaggerMs: preset.workerStaggerMs,
+      requestGapMs: preset.requestGapMs,
+      probeCooldownMs: preset.probeCooldownMs,
+      probeMaxRounds: preset.probeMaxRounds,
     };
   }
 
+  /** Effective concurrent task slots for the current download mode. */
+  private maxConcurrentSlots(): number {
+    const preset = downloadModePreset(this.deps.downloadMode);
+    if (preset.useSettingsConnections) {
+      return Math.max(1, this.deps.maxConcurrentTasks || preset.maxConcurrentTasks || 3);
+    }
+    return Math.max(1, preset.maxConcurrentTasks || this.deps.maxConcurrentTasks || 3);
+  }
+
+  get downloadMode(): DownloadMode {
+    return resolveDownloadMode(this.deps.downloadMode);
+  }
+
+  setDownloadMode(mode: DownloadMode): void {
+    this.deps = { ...this.deps, downloadMode: resolveDownloadMode(mode) };
+  }
+
   private promoteQueue(): void {
-    const slots = this.deps.maxConcurrentTasks - this.activeCount();
+    const slots = this.maxConcurrentSlots() - this.activeCount();
     if (slots <= 0) return;
     const queued = [...this.tasks.values()]
       .filter((task) => task.status === 'queued')
@@ -393,7 +471,10 @@ export class TaskRunner extends EventEmitter {
           onProgress: (p) => {
             this.patch(taskRef.id, {
               doneBytes: p.doneBytes,
-              totalBytes: p.totalBytes || p.doneBytes,
+              totalBytes:
+                p.totalBytes && p.totalBytes > 0
+                  ? p.totalBytes
+                  : this.tasks.get(taskRef.id)?.totalBytes || p.doneBytes || 0,
               speedBps: p.speedBps,
               etaSeconds: p.etaSeconds,
             });
@@ -445,6 +526,7 @@ export class TaskRunner extends EventEmitter {
           headers: task.headers,
           proxy: this.deps.httpProxy,
           cookieBrowser: this.deps.cookieBrowser,
+          cookieFile: this.deps.cookieFile,
           outputTemplate: path.join(saveDir, '%(title).200B [%(id)s].%(ext)s'),
         },
         {
@@ -553,6 +635,15 @@ export class TaskRunner extends EventEmitter {
           limitRateBps: limitBps,
           maxConnections: this.deps.maxConnectionsPerServer || this.deps.maxConnections,
           proxy: this.deps.httpProxy,
+          userDataDir: this.deps.userDataDir,
+          extraTrackers: String(this.deps.btTrackers || '')
+            .split(/[\r\n,;]+/)
+            .map((s) => s.trim())
+            .filter(Boolean),
+          metadataTimeoutMs:
+            this.deps.btMetadataTimeoutSec && this.deps.btMetadataTimeoutSec > 0
+              ? this.deps.btMetadataTimeoutSec * 1000
+              : undefined,
         },
         {
           onProgress: (progress) => {
@@ -580,6 +671,14 @@ export class TaskRunner extends EventEmitter {
               return;
             }
             this.settleAndPromote(taskRef.id, mapped, error);
+          },
+          onLog: (line) => {
+            if (!line) return;
+            try {
+              logTask(taskRef.id, 'aria2', line.slice(0, 400));
+            } catch {
+              /* ignore */
+            }
           },
           onOutputFile: (filePath) => {
             this.patch(taskRef.id, {
@@ -632,7 +731,7 @@ export class TaskRunner extends EventEmitter {
     ) {
       return;
     }
-    if (this.activeCount() >= this.deps.maxConcurrentTasks) {
+    if (this.activeCount() >= this.maxConcurrentSlots()) {
       this.patch(taskId, { status: 'queued' });
       return;
     }
@@ -878,6 +977,16 @@ export class TaskRunner extends EventEmitter {
   async resume(taskId: string): Promise<void> {
     const task = this.tasks.get(taskId);
     if (!task) throw new Error(`[TaskRunner] unknown task id=${taskId}`);
+    // BT/RPC: keep gid mapping on pause — unpause instead of re-adding magnet
+    if (this.torrentEngine.isRunning(taskId) || this.torrentEngine.isPaused(taskId)) {
+      const ok = await this.torrentEngine.resumeRpc(taskId);
+      if (ok) {
+        this.patch(taskId, { status: 'downloading', error: undefined, retryCount: 0 });
+        this.persistNow();
+        this.emit('tasks');
+        return;
+      }
+    }
     if (
       this.engine.isRunning(taskId) ||
       this.mediaEngine.isRunning(taskId) ||

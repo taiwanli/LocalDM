@@ -36,6 +36,15 @@ assert(
 );
 assert(cookieBrowserArgs('', 'https://www.douyin.com/video/1').length === 0, 'no cookie browser');
 assert(cookieBrowserArgs('chrome', 'https://example.com/a.zip').length === 0, 'cookie only sensitive hosts');
+assert(cookieBrowserArgs('twinkstar', 'https://www.douyin.com/video/1').length === 0, 'twinkstar resolved upstream');
+assert(
+  cookieBrowserArgs(
+    'chrome:C:\\Users\\x\\AppData\\Local\\Twinkstar\\User Data',
+    'https://www.douyin.com/video/1',
+  ).join(' ') ===
+    '--cookies-from-browser chrome:C:\\Users\\x\\AppData\\Local\\Twinkstar\\User Data',
+  'chrome profile path args',
+);
 
 assert(isHlsUrl('https://cdn.example/live/index.m3u8'), 'hls url');
 const master = `#EXTM3U

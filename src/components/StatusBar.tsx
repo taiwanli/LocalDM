@@ -1,4 +1,6 @@
 import { formatSpeed } from '../utils/format';
+import { DOWNLOAD_MODE_LABELS } from '@shared/types';
+import type { DownloadMode } from '@shared/types';
 
 export type ExtensionStatus = 'unknown' | 'checking' | 'ok' | 'down';
 
@@ -6,6 +8,7 @@ interface Props {
   taskCount: number;
   totalSpeed: number;
   downloadDir: string;
+  downloadMode?: DownloadMode;
   extensionStatus?: ExtensionStatus;
   onOpenAbout?: () => void;
 }
@@ -21,15 +24,17 @@ export function StatusBar({
   taskCount,
   totalSpeed,
   downloadDir,
+  downloadMode = 'balanced',
   extensionStatus = 'unknown',
   onOpenAbout,
 }: Props) {
+  const modeLabel = DOWNLOAD_MODE_LABELS[downloadMode] || DOWNLOAD_MODE_LABELS.balanced;
   return (
     <footer className="statusbar glass-thin">
       <span>
         {taskCount} 个任务 · 总速度{' '}
         <span className="mono">{formatSpeed(totalSpeed)}</span>
-        {' '}· Range 自适应
+        {' '}· 模式 <strong className="mode-tag">{modeLabel}</strong>
       </span>
       <button
         type="button"
@@ -55,6 +60,7 @@ export function StatusBar({
           font-size: var(--text-12);
           color: var(--label-secondary);
         }
+        .mode-tag { color: var(--label); font-weight: 600; }
         .dir { max-width: 36%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .ext-pill {
           flex-shrink: 0;

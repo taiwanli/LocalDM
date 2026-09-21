@@ -27,6 +27,12 @@ export function friendlyTaskError(raw: string | undefined | null): string {
   if (/probe failed status=416/i.test(s)) {
     return '服务器不支持当前下载方式，可稍后重试或换链接。';
   }
+  if (/Fresh cookies|cookies are needed|Douyin/i.test(s) && /cookie|Fresh/i.test(s)) {
+    return '抖音需要新鲜 Cookie：设置 → 进阶 →「Cookie 浏览器」选**星愿浏览器**，先在星愿登录 douyin.com，**完全退出星愿**后再重试。Chrome/Edge 用户同理。';
+  }
+  if (/Could not copy Chrome cookie database|copy.*cookie/i.test(s)) {
+    return 'Cookie 数据库被占用：请完全退出所选浏览器（星愿/Chrome 等）后重试；若仍失败可在抖音页导出 cookies.txt 填到设置「Cookie 文件」。';
+  }
   if (/yt-dlp/i.test(s) && /404|Unable to download/i.test(s)) {
     return '视频页解析失败（yt-dlp）：链接可能无效或受地区限制。';
   }

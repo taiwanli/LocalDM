@@ -2,10 +2,16 @@ import { useMemo, useState } from 'react';
 import type {
   AccentPreference,
   AppSettings,
+  DownloadMode,
   MediaQuality,
   ThemePreference,
 } from '@shared/types';
-import { ACCENT_LABELS, MEDIA_QUALITY_LABELS } from '@shared/types';
+import {
+  ACCENT_LABELS,
+  DOWNLOAD_MODE_LABELS,
+  DOWNLOAD_MODE_PRESETS,
+  MEDIA_QUALITY_LABELS,
+} from '@shared/types';
 import { buildProxyUrl, parseProxyUrl } from '@shared/proxy';
 
 interface Props {
@@ -49,6 +55,8 @@ export function SettingsDialog({
     accent: settings.accent || 'blue',
     enableBt: settings.enableBt !== false,
     aria2cPath: settings.aria2cPath || '',
+    btTrackers: settings.btTrackers || '',
+    btMetadataTimeoutSec: settings.btMetadataTimeoutSec ?? 180,
     hfCookie: settings.hfCookie || '',
     hfToken: settings.hfToken || '',
     httpProxy: settings.httpProxy || '',
@@ -62,6 +70,8 @@ export function SettingsDialog({
     clipboardTakeoverEnabled: Boolean(settings.clipboardTakeoverEnabled),
     adaptiveDegrade: settings.adaptiveDegrade !== false,
     cookieBrowser: settings.cookieBrowser || '',
+    cookieFile: settings.cookieFile || '',
+    downloadMode: (settings.downloadMode || 'adaptive') as DownloadMode,
     askVideoQuality: Boolean(settings.askVideoQuality),
     useNativeHls: settings.useNativeHls !== false,
   });
@@ -121,11 +131,15 @@ export function SettingsDialog({
         requireApiToken: draft.requireApiToken,
         aria2cPath: draft.aria2cPath.trim(),
         enableBt: draft.enableBt,
+        btTrackers: draft.btTrackers || '',
+        btMetadataTimeoutSec: draft.btMetadataTimeoutSec ?? 180,
         accent: draft.accent || 'blue',
         systemTakeoverEnabled: draft.systemTakeoverEnabled,
         clipboardTakeoverEnabled: draft.clipboardTakeoverEnabled,
         adaptiveDegrade: draft.adaptiveDegrade !== false,
         cookieBrowser: draft.cookieBrowser || '',
+        cookieFile: (draft.cookieFile || '').trim(),
+        downloadMode: draft.downloadMode || 'adaptive',
         askVideoQuality: draft.askVideoQuality,
         useNativeHls: draft.useNativeHls,
       };
@@ -255,6 +269,33 @@ export function SettingsDialog({
 
             {panel === 'advanced' && (
               <>
+                <section className="group">
+                  <div className="group-title">下载模式</div>
+                  <div className="hint">
+                    「自适应」按设置中的连接数启动，遇限流自动降并发（推荐）。默认/均衡/极速为固定预设。
+                  </div>
+                  <div className="mode-grid">
+                    {(['adaptive', 'default', 'balanced', 'turbo'] as DownloadMode[]).map((id) => {
+                      const preset = DOWNLOAD_MODE_PRESETS[id];
+                      const active = (draft.downloadMode || 'adaptive') === id;
+                      const connText = preset.useSettingsConnections
+                        ? `连接 ${draft.maxConnections || 8} · 并发 ${draft.maxConcurrentTasks || 3}`
+                        : `连接 ${preset.maxConnections} · 并发 ${preset.maxConcurrentTasks}`;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          className={`mode-card${active ? ' is-active' : ''}`}
+                          onClick={() => update('downloadMode', id)}
+                        >
+                          <span className="mode-label">{DOWNLOAD_MODE_LABELS[id]}</span>
+                          <span className="mode-hint">{preset.hint}</span>
+                          <span className="mode-meta mono">{connText}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
                 <section className="group">
                   <div className="group-title">连接与队列</div>
                   <div className="grid-2">
@@ -451,7 +492,24 @@ export function SettingsDialog({
                         <option value="chrome">Chrome</option>
                         <option value="edge">Edge</option>
                         <option value="firefox">Firefox</option>
+                        <option value="twinkstar">星愿浏览器 (Twinkstar)</option>
                       </select>
+                      <span className="field-hint">
+                        抖音等站点：请在该浏览器打开并登录 douyin.com。使用星愿时下载前请先退出星愿，否则 Cookie 库被占用会失败。
+                      </span>
+                    </label>
+                    <label className="field">
+                      <span>Cookie 文件（cookies.txt）</span>
+                      <input
+                        className="input mono"
+                        value={draft.cookieFile || ''}
+                        onChange={(event) => update('cookieFile', event.target.value)}
+                        placeholder="C:\\path\\douyin-cookies.txt"
+                        spellCheck={false}
+                      />
+                      <span className="field-hint">
+                        Netscape 格式；浏览器 Cookie 解密失败时，可在抖音页用扩展导出后填这里。
+                      </span>
                     </label>
                     <label className="field">
                       <span>yt-dlp 路径</span>
@@ -491,6 +549,42 @@ export function SettingsDialog({
                       onChange={(event) => update('enableBt', event.target.checked)}
                     />
                     <span>启用 BT / 磁力下载</span>
+                  </label>
+                  <div className="field-hint" style={{ marginBottom: 10 }}>
+                    BT 使用共用 aria2 引擎（RPC）。aria2 不会自动做路由器端口映射，请在防火墙放行
+                    TCP/UDP <span className="mono">51413–52413</span>
+                    以提升入站 peer；否则多依赖出站连接与 DHT。
+                  </div>
+                  <label className="field">
+                    <span>磁力元数据超时（秒，0=不超时）</span>
+                    <input
+                      className="input mono"
+                      type="number"
+                      min={0}
+                      max={3600}
+                      value={draft.btMetadataTimeoutSec ?? 180}
+                      onChange={(event) =>
+                        update('btMetadataTimeoutSec', Number(event.target.value))
+                      }
+                    />
+                    <span className="field-hint">
+                      超时仍无字节/无节点时判定资源不可用并失败，避免一直「下载中」。
+                    </span>
+                  </label>
+                  <label className="field">
+                    <span>附加 Tracker（每行一个，可选）</span>
+                    <textarea
+                      className="input mono"
+                      rows={4}
+                      value={draft.btTrackers || ''}
+                      onChange={(event) => update('btTrackers', event.target.value)}
+                      placeholder={'udp://tracker.example.com:1337/announce\nhttp://t.acg.rip:6699/announce'}
+                      spellCheck={false}
+                      style={{ height: 'auto', minHeight: 88, paddingTop: 8, resize: 'vertical' }}
+                    />
+                    <span className="field-hint">
+                      与内置公共 tracker 合并；建议优先保留 HTTP tracker。
+                    </span>
                   </label>
                   <label className="check">
                     <input
@@ -726,6 +820,12 @@ const styles = `
 }
 .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
 .field > span { font-size: var(--text-12); color: var(--label-secondary); }
+.field-hint {
+  font-size: var(--text-11);
+  color: var(--label-secondary);
+  line-height: 1.4;
+  opacity: 0.9;
+}
 .input {
   height: 36px;
   border-radius: var(--radius-md);
@@ -735,6 +835,38 @@ const styles = `
   padding: 0 10px;
 }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  text-align: left;
+  padding: 12px 12px 10px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--separator);
+  background: var(--bg);
+  color: var(--label);
+  min-height: 96px;
+}
+.mode-card.is-active {
+  border-color: var(--tint);
+  box-shadow: 0 0 0 2px var(--tint-soft, color-mix(in srgb, var(--tint) 25%, transparent));
+  background: color-mix(in srgb, var(--tint) 8%, var(--bg));
+}
+.mode-label { font-size: var(--text-13); font-weight: 600; }
+.mode-hint {
+  font-size: var(--text-11);
+  color: var(--label-secondary);
+  line-height: 1.35;
+  flex: 1;
+}
+.mode-meta { font-size: var(--text-11); color: var(--label-secondary); }
 .segmented {
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 4px; padding: 3px;

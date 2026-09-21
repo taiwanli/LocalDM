@@ -38,7 +38,7 @@ export function TaskList({
           <div className="empty">点击「添加」粘贴链接开始下载</div>
         )}
         {tasks.map((t) => {
-          const pct = percent(t.doneBytes, t.totalBytes);
+          const pct = percent(t.doneBytes, t.totalBytes, t.status);
           return (
             <button
               key={t.id}
@@ -56,11 +56,12 @@ export function TaskList({
               <div className="row-main">
                 <div className="name">{t.filename}</div>
                 <div className="meta mono">
-                  {pct.toFixed(1)}%
-                  {t.status === 'downloading' || t.status === 'merging'
-                    ? ` · ${formatSpeed(t.speedBps)}`
-                    : ''}
-                  {t.etaSeconds != null && t.status === 'downloading'
+                  {(t.category === 'torrent' || t.mediaKind === 'magnet') &&
+                  t.status === 'downloading' &&
+                  t.totalBytes <= 0
+                    ? '获取磁力节点/元数据中…（若长时间无速度，资源可能无做种）'
+                    : `${pct.toFixed(1)}%${t.status === 'downloading' || t.status === 'merging' ? ` · ${formatSpeed(t.speedBps)}` : ''}`}
+                  {t.status === 'downloading' && t.totalBytes > 0 && t.etaSeconds != null
                     ? ` · 剩余 ${formatEta(t.etaSeconds)}`
                     : ''}
                   {t.effectiveConnections && t.effectiveConnections > 0

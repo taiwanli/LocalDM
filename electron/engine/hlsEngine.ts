@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { Readable } from 'node:stream';
+import { sanitizeFilename } from '../../shared/url';
 
 export interface HlsProgress {
   doneBytes: number;
@@ -181,7 +182,8 @@ export class HlsEngine {
       }
 
       const stem =
-        (options.filename || 'video').replace(/\.(m3u8|mp4|ts)$/i, '') || `hls-${Date.now()}`;
+        sanitizeFilename((options.filename || `hls-${Date.now()}`).replace(/\.(m3u8|mp4|ts)$/i, '')) ||
+        `hls-${Date.now()}`;
       const tsPath = path.join(options.saveDir, `${stem}.ts`);
       const outMp4 = path.join(options.saveDir, `${stem}.mp4`);
 
@@ -213,9 +215,15 @@ export class HlsEngine {
           windowAt = now;
         }
         const doneSeg = sizes.filter((s) => s > 0).length;
+        // Estimate total from average segment size — do NOT set total=done (would show 100% early).
+        const avg = doneSeg > 0 ? doneBytes / doneSeg : 0;
+        const estimatedTotal =
+          avg > 0 && segments.length > 0
+            ? Math.max(doneBytes + 1, Math.round(avg * segments.length))
+            : Math.max(doneBytes + 1, segments.length);
         callbacks.onProgress({
           doneBytes,
-          totalBytes: doneBytes,
+          totalBytes: estimatedTotal,
           speedBps,
           etaSeconds: null,
           segmentsDone: doneSeg,
@@ -257,6 +265,7 @@ export class HlsEngine {
         segmentsDone: segments.length,
         segmentsTotal: segments.length,
       });
+      // Still concatenating / remuxing — UI caps at 99.9% until status=completed.
 
       // Remux if ffmpeg available
       const ffmpeg = options.ffmpegPath && fs.existsSync(options.ffmpegPath) ? options.ffmpegPath : '';

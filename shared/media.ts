@@ -18,7 +18,7 @@ export function needsBrowserCookies(url: string): boolean {
   }
 }
 
-export type CookieBrowser = '' | 'chrome' | 'edge' | 'firefox';
+export type CookieBrowser = '' | 'chrome' | 'edge' | 'firefox' | 'twinkstar';
 
 /** Normalize pasted URLs: add https, rewrite platform share links. */
 export function normalizeDownloadUrl(raw: string): string {
@@ -73,9 +73,17 @@ export function cookieBrowserArgs(
   browser: CookieBrowser | string | undefined,
   url: string,
 ): string[] {
-  const b = String(browser || '').trim().toLowerCase();
-  if (!b) return [];
-  if (!['chrome', 'edge', 'firefox', 'chromium', 'brave'].includes(b)) return [];
+  const raw = String(browser || '').trim();
+  if (!raw) return [];
   if (!needsBrowserCookies(url)) return [];
-  return ['--cookies-from-browser', b];
+  const lower = raw.toLowerCase();
+  // Resolved to chrome:<userData> by MediaEngine before this helper.
+  if (lower === 'twinkstar') return [];
+  if (['chrome', 'edge', 'firefox', 'chromium', 'brave'].includes(lower)) {
+    return ['--cookies-from-browser', lower];
+  }
+  // chrome:C:\Users\...\User Data — keep path casing
+  const m = raw.match(/^(chrome|chromium|edge|brave):(.+)$/i);
+  if (m) return ['--cookies-from-browser', `${m[1].toLowerCase()}:${m[2]}`];
+  return [];
 }

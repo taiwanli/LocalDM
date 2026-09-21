@@ -45,7 +45,7 @@ export function TaskDetailDialog({
     task.mediaKind === 'torrent' ||
     task.mediaKind === 'magnet' ||
     /\.(m3u8|mpd)(\?|$)/i.test(task.url);
-  const pct = percent(task.doneBytes, task.totalBytes);
+  const pct = percent(task.doneBytes, task.totalBytes, task.status);
 
   useEffect(() => {
     setLimitDraft(String(task.speedLimitBps ?? 0));

@@ -1,6 +1,6 @@
 {
   "name": "localdm",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "LocalDM — open-source multi-thread download manager for Windows",
   "main": "dist-electron/electron/main.js",

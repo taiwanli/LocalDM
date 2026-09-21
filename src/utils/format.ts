@@ -25,7 +25,10 @@ export function formatEta(seconds: number | null): string {
   return `${m}:${String(sec).padStart(2, '0')}`;
 }
 
-export function percent(done: number, total: number): number {
+export function percent(done: number, total: number, status?: string): number {
   if (total <= 0) return 0;
-  return Math.min(100, Math.max(0, (done / total) * 100));
+  const p = Math.min(100, Math.max(0, (done / total) * 100));
+  // Never claim 100% until the engine marks the task completed (merge/concat still running).
+  if (status && status !== 'completed' && p >= 100) return 99.9;
+  return p;
 }

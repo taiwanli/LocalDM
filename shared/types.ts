@@ -64,12 +64,13 @@ export type AccentPreference =
  * Download aggressiveness presets.
  * Sites with WAF/CDN rate limits (e.g. EdgeOne 567) often block high parallelism.
  */
-export type DownloadMode = 'default' | 'balanced' | 'turbo';
+export type DownloadMode = 'default' | 'balanced' | 'turbo' | 'adaptive';
 
 export const DOWNLOAD_MODE_LABELS: Record<DownloadMode, string> = {
   default: '默认',
   balanced: '均衡',
   turbo: '极速',
+  adaptive: '自适应',
 };
 
 export interface DownloadModePreset {
@@ -87,6 +88,10 @@ export interface DownloadModePreset {
   probeCooldownMs: number;
   /** Max probe backoff rounds before giving up */
   probeMaxRounds: number;
+  /** Force adaptive rate-limit degrade for this mode */
+  adaptiveDegrade?: boolean;
+  /** When true, engine uses user-configured connection counts instead of fixed preset numbers */
+  useSettingsConnections?: boolean;
 }
 
 export const DOWNLOAD_MODE_PRESETS: Record<DownloadMode, DownloadModePreset> = {
@@ -105,7 +110,7 @@ export const DOWNLOAD_MODE_PRESETS: Record<DownloadMode, DownloadModePreset> = {
   balanced: {
     id: 'balanced',
     label: '均衡',
-    hint: '适中并发，速度与兼容折中（推荐日常）',
+    hint: '适中并发，速度与兼容折中',
     maxConnections: 6,
     maxConnectionsPerServer: 6,
     maxConcurrentTasks: 2,
@@ -125,6 +130,20 @@ export const DOWNLOAD_MODE_PRESETS: Record<DownloadMode, DownloadModePreset> = {
     requestGapMs: 0,
     probeCooldownMs: 4000,
     probeMaxRounds: 3,
+  },
+  adaptive: {
+    id: 'adaptive',
+    label: '自适应',
+    hint: '按设置里的连接数启动，限流时自动降并发（推荐日常）',
+    maxConnections: 8,
+    maxConnectionsPerServer: 8,
+    maxConcurrentTasks: 3,
+    workerStaggerMs: 80,
+    requestGapMs: 20,
+    probeCooldownMs: 8000,
+    probeMaxRounds: 5,
+    adaptiveDegrade: true,
+    useSettingsConnections: true,
   },
 };
 
@@ -236,6 +255,10 @@ export interface AppSettings {
   aria2cPath: string;
   /** Enable BT/magnet downloads via aria2c. */
   enableBt: boolean;
+  /** Extra BitTorrent trackers for magnets (newline separated; merged with built-in list). */
+  btTrackers: string;
+  /** Fail magnet tasks stuck on metadata for this many seconds (0 = never). */
+  btMetadataTimeoutSec: number;
   /** UI accent (pixel-level theme customization). */
   accent: AccentPreference;
   /** Master switch: system/browser downloads default to LocalDM. */
@@ -246,8 +269,10 @@ export interface AppSettings {
   downloadMode: DownloadMode;
   /** Auto-degrade connections on WAF/rate-limit (567/403/429…). */
   adaptiveDegrade: boolean;
-  /** yt-dlp --cookies-from-browser for cookie-sensitive hosts */
-  cookieBrowser: '' | 'chrome' | 'edge' | 'firefox';
+  /** yt-dlp --cookies-from-browser for cookie-sensitive hosts (twinkstar = 星愿浏览器) */
+  cookieBrowser: '' | 'chrome' | 'edge' | 'firefox' | 'twinkstar';
+  /** Netscape cookies.txt path for yt-dlp --cookies (e.g. Douyin) */
+  cookieFile: string;
   /** Open quality picker when adding platform video tasks */
   askVideoQuality: boolean;
   /** Prefer native HLS engine for .m3u8 when ffmpeg is available */
@@ -306,12 +331,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
   requireApiToken: true,
   aria2cPath: '',
   enableBt: true,
+  btTrackers: '',
+  btMetadataTimeoutSec: 180,
   accent: 'blue',
   systemTakeoverEnabled: false,
   clipboardTakeoverEnabled: false,
-  downloadMode: 'balanced',
+  downloadMode: 'adaptive',
   adaptiveDegrade: true,
   cookieBrowser: '',
+  cookieFile: '',
   askVideoQuality: false,
   useNativeHls: true,
   proxyType: 'http',

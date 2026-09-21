@@ -408,19 +408,29 @@ function normalizeSettings(raw: Partial<AppSettings>): AppSettings {
     requireApiToken: Boolean(base.requireApiToken),
     aria2cPath: String(base.aria2cPath || ''),
     enableBt: base.enableBt !== false,
+    btTrackers: String(base.btTrackers || ''),
+    btMetadataTimeoutSec: Math.max(
+      0,
+      Math.min(3600, Math.floor(base.btMetadataTimeoutSec ?? 180)),
+    ),
     systemTakeoverEnabled: Boolean(base.systemTakeoverEnabled),
     clipboardTakeoverEnabled: Boolean(base.clipboardTakeoverEnabled),
     downloadMode:
-      base.downloadMode === 'default' || base.downloadMode === 'turbo'
+      base.downloadMode === 'default' ||
+      base.downloadMode === 'turbo' ||
+      base.downloadMode === 'balanced' ||
+      base.downloadMode === 'adaptive'
         ? base.downloadMode
-        : 'balanced',
+        : 'adaptive',
     adaptiveDegrade: base.adaptiveDegrade !== false,
     cookieBrowser:
       base.cookieBrowser === 'chrome' ||
       base.cookieBrowser === 'edge' ||
-      base.cookieBrowser === 'firefox'
+      base.cookieBrowser === 'firefox' ||
+      base.cookieBrowser === 'twinkstar'
         ? base.cookieBrowser
         : '',
+    cookieFile: String(base.cookieFile || '').trim(),
     askVideoQuality: Boolean(base.askVideoQuality),
     useNativeHls: base.useNativeHls !== false,
     accent:
@@ -459,10 +469,14 @@ async function applySettingsToRunner(runner: TaskRunner, next: AppSettings): Pro
     hfToken: normalized.hfToken,
     aria2cPath: normalized.aria2cPath,
     enableBt: normalized.enableBt,
+    btTrackers: normalized.btTrackers,
+    btMetadataTimeoutSec: normalized.btMetadataTimeoutSec,
     adaptiveDegrade: normalized.adaptiveDegrade,
     cookieBrowser: normalized.cookieBrowser,
+    cookieFile: normalized.cookieFile,
     askVideoQuality: normalized.askVideoQuality,
     useNativeHls: normalized.useNativeHls,
+    downloadMode: normalized.downloadMode,
     appRoot: app.getAppPath(),
   });
 }
@@ -784,8 +798,12 @@ if (!gotLock) {
       enableBt: settings.enableBt,
       adaptiveDegrade: settings.adaptiveDegrade,
       cookieBrowser: settings.cookieBrowser,
+      cookieFile: settings.cookieFile,
       askVideoQuality: settings.askVideoQuality,
       useNativeHls: settings.useNativeHls,
+      downloadMode: settings.downloadMode,
+      btTrackers: settings.btTrackers,
+      btMetadataTimeoutSec: settings.btMetadataTimeoutSec,
       onTaskStatusSettled: handleTaskSettled,
     });
     taskRunner.on('tasks', broadcastTasks);
@@ -884,6 +902,9 @@ if (!gotLock) {
     isQuitting = true;
     stopClipboardTakeoverMonitor();
     void apiServer?.stop();
+    void import('./engine/torrentEngine')
+      .then((m) => m.getAria2Daemon().shutdown())
+      .catch(() => undefined);
   });
 
   app.on('window-all-closed', () => {
